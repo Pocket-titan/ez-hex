@@ -1,6 +1,6 @@
 import React, { ReactNode } from "react";
 
-type Orientation = "FLAT_TOP" | "POINTY_TOP";
+export type Orientation = "FLAT_TOP" | "POINTY_TOP";
 
 const Hexagon = ({
   children,
@@ -54,6 +54,7 @@ const Hexagon = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
+          backgroundColor: "#f06",
           clipPath: clip_path,
         }}
       >
