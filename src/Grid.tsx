@@ -1,84 +1,75 @@
 import React, { Ref } from "react";
 import Hexagon, { Orientation } from "./Hexagon";
 import { ContentRect } from "react-measure";
-
-interface Radian extends Number {}
-
-interface Degree extends Number {}
-
-let degToRad = (x: Degree): Radian => ((x as number) * 180) / Math.PI;
-
-let radToDeg = (x: Radian): Degree => ((x as number) * Math.PI) / 180;
+import colormaps from "./colormaps";
 
 const isOdd = (x: number) => x % 2 === 0;
 
-const percentage = (a: number, b: number) => (a / b) * 100;
+// const colormaps = {
+//   vintage: [
+//     "hsl(45, 74%, 82%)",
+//     "hsl(22, 100%, 59%)",
+//     "hsl(156, 43%, 67%)",
+//     "hsl(62, 73%, 45%)",
+//     "hsl(335, 100%, 50%)",
+//   ],
+//   pastel: [
+//     "hsl(68, 75%, 51%)",
+//     "hsl(188, 69%, 72%)",
+//     "hsl(46, 100%, 67%)",
+//     "hsl(355, 67%, 68%)",
+//   ],
+//   vibrant: [
+//     "hsl(0, 0%, 91%)",
+//     "hsl(173, 91%, 37%)",
+//     "hsl(335, 86%, 51%)",
+//     "hsl(21, 90%, 58%)",
+//     "hsl(40, 97%, 54%)",
+//     "hsl(62, 61%, 49%)",
+//   ],
+//   wallpaper: [
+//     "hsl(20, 89%, 89%)",
+//     "hsl(177, 24%, 56%)",
+//     "hsl(4, 84%, 75%)",
+//     "hsl(354, 41%, 54%)",
+//     "hsl(247, 19%, 28%)",
+//   ],
+//   viridis: [
+//     "hsl(53, 95%, 78%)",
+//     "hsl(85, 51%, 63%)",
+//     "hsl(152, 51%, 40%)",
+//     "hsl(261, 24%, 26%)",
+//     "hsl(293, 54%, 15%)",
+//   ],
+//   reds: [
+//     "hsl(0, 0%, 100%)",
+//     "hsl(341, 82%, 49%)",
+//     "hsl(335, 65%, 41%)",
+//     "hsl(20, 89%, 58%)",
+//     "hsl(48, 98%, 52%)",
+//   ],
+//   material: [
+//     "hsl(240, 100%, 75%)",
+//     "hsl(0, 100%, 64%)",
+//     "hsl(168, 33%, 44%)",
+//     "hsl(54, 99%, 46%)",
+//   ],
+//   classic: [
+//     "hsl(0, 0%, 80%)",
+//     // "hsl(216, 100%, 67%)",
+//     "hsl(0, 57%, 53%)",
+//     "hsl(240, 57%, 53%)",
+//   ],
+// };
 
-let default_orientation: Orientation = "POINTY_TOP";
-
-const colormaps = {
-  vintage: [
-    "hsl(45, 74%, 82%)",
-    "hsl(22, 100%, 59%)",
-    "hsl(156, 43%, 67%)",
-    "hsl(62, 73%, 45%)",
-    "hsl(335, 100%, 50%)",
-  ],
-  pastel: [
-    "hsl(68, 75%, 51%)",
-    "hsl(188, 69%, 72%)",
-    "hsl(46, 100%, 67%)",
-    "hsl(355, 67%, 68%)",
-  ],
-  vibrant: [
-    "hsl(0, 0%, 91%)",
-    "hsl(173, 91%, 37%)",
-    "hsl(335, 86%, 51%)",
-    "hsl(21, 90%, 58%)",
-    "hsl(40, 97%, 54%)",
-    "hsl(62, 61%, 49%)",
-  ],
-  wallpaper: [
-    "hsl(20, 89%, 89%)",
-    "hsl(177, 24%, 56%)",
-    "hsl(4, 84%, 75%)",
-    "hsl(354, 41%, 54%)",
-    "hsl(247, 19%, 28%)",
-  ],
-  viridis: [
-    "hsl(53, 95%, 78%)",
-    "hsl(85, 51%, 63%)",
-    "hsl(152, 51%, 40%)",
-    "hsl(261, 24%, 26%)",
-    "hsl(293, 54%, 15%)",
-  ],
-  reds: [
-    "hsl(0, 0%, 100%)",
-    "hsl(341, 82%, 49%)",
-    "hsl(335, 65%, 41%)",
-    "hsl(20, 89%, 58%)",
-    "hsl(48, 98%, 52%)",
-  ],
-  material: [
-    "hsl(240, 100%, 75%)",
-    "hsl(0, 100%, 64%)",
-    "hsl(168, 33%, 44%)",
-    "hsl(54, 99%, 46%)",
-  ],
-  classic: [
-    "hsl(0, 0%, 80%)",
-    // "hsl(216, 100%, 67%)",
-    "hsl(0, 57%, 53%)",
-    "hsl(240, 57%, 53%)",
-  ],
-};
+let colormap = colormaps.vintage;
 
 const Grid = React.forwardRef(
   (
     {
       size = 5,
       contentRect,
-      orientation = default_orientation,
+      orientation = "POINTY_TOP",
     }: {
       size?: number;
       contentRect: ContentRect;
@@ -115,9 +106,6 @@ const Grid = React.forwardRef(
     // const PADDING = 2 * GAP;
     const BORDER_GAP = 0;
     const PADDING = 2 * 40;
-    // let column_width =
-    //   (width - 2 * PADDING - (num_columns - 1) * GAP) / num_columns;
-    // let row_height = (height - 2 * PADDING - (num_rows - 1) * GAP) / num_rows;
 
     let cell_width = (width - 2 * PADDING) / num_columns;
     let cell_height = (height - 2 * PADDING) / num_rows;
@@ -141,6 +129,8 @@ const Grid = React.forwardRef(
 
     let left_edges = hexagons.filter(({ x, y }) => x === 0);
     let top_edges = hexagons.filter(({ x, y }) => y === 0);
+    let right_edges = hexagons.filter(({ x, y }) => x === size - 1);
+    let bottom_edges = hexagons.filter(({ x, y }) => y === size - 1);
 
     const STROKE_WIDTH = 20;
 
@@ -172,7 +162,7 @@ const Grid = React.forwardRef(
       .join(" ");
 
     let top_edge = top_edges
-      .map(({ row_start, column_start }) => {
+      .map(({ row_start, column_start }, index) => {
         let offset = BORDER_GAP / Math.sqrt(2);
 
         let points = [
@@ -181,6 +171,53 @@ const Grid = React.forwardRef(
           [2 * cell_width, 0],
         ]
           .map(([x, y]) => [x, y - STROKE_WIDTH / Math.sqrt(2) + 3])
+          .map(([x, y]) => [x - offset, y - offset])
+          .map(([x, y]) => [x, y + cell_height])
+          .map(([x, y]) => [
+            x + (column_start - 1) * cell_width,
+            y + (row_start - 1) * cell_height,
+          ])
+          .map(([x, y]) => [x + PADDING, y + PADDING]);
+
+        return points;
+      })
+      .flat(1)
+      .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
+      .join(" ");
+
+    let right_edge = right_edges
+      .map(({ row_start, column_start }) => {
+        let offset = BORDER_GAP / Math.sqrt(2);
+
+        let points = [
+          [2 * cell_width, 0],
+          [2 * cell_width, 2 * cell_height],
+        ]
+          .map(([x, y]) => [x + STROKE_WIDTH / 2 - 1, y - 5])
+          .map(([x, y]) => [x + offset, y + offset])
+          .map(([x, y]) => [x, y + cell_height])
+          .map(([x, y]) => [
+            x + (column_start - 1) * cell_width,
+            y + (row_start - 1) * cell_height,
+          ])
+          .map(([x, y]) => [x + PADDING, y + PADDING]);
+
+        return points;
+      })
+      .flat(1)
+      .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
+      .join(" ");
+
+    let bottom_edge = bottom_edges
+      .map(({ row_start, column_start }) => {
+        let offset = BORDER_GAP / Math.sqrt(2);
+
+        let points = [
+          [0, 3 * cell_height],
+          [cell_width, 4 * cell_height],
+          [2 * cell_width, 3 * cell_height],
+        ]
+          .map(([x, y]) => [x, y - 2 * STROKE_WIDTH - 2])
           .map(([x, y]) => [x - offset, y - offset])
           .map(([x, y]) => [x, y + cell_height])
           .map(([x, y]) => [
@@ -210,24 +247,6 @@ const Grid = React.forwardRef(
           gridTemplateRows: `repeat(${num_rows}, 1fr)`,
         }}
       >
-        {left_edges.map(({ row_start, column_start }) => {
-          // let x_o = Math.sqrt(Math.abs(BORDER_GAP ** 2 - cell_height ** 2));
-          let o = BORDER_GAP / Math.sqrt(2);
-
-          return (
-            <div
-              style={{
-                position: "absolute",
-                left: PADDING + (column_start - 1) * cell_width - o,
-                top: PADDING + (row_start - 1) * cell_height + cell_height - o,
-                width: 10,
-                height: 10,
-                background: "yellow",
-                zIndex: 99,
-              }}
-            />
-          );
-        })}
         <svg
           width={width}
           height={height}
@@ -245,7 +264,7 @@ const Grid = React.forwardRef(
             strokeWidth={STROKE_WIDTH}
             strokeLinecap={"butt"}
             strokeLinejoin={"miter"}
-            stroke="blue"
+            stroke={colormap.players[1]}
             d={left_edge}
           />
           <path
@@ -253,12 +272,28 @@ const Grid = React.forwardRef(
             strokeWidth={STROKE_WIDTH}
             strokeLinecap={"butt"}
             strokeLinejoin={"miter"}
-            stroke="green"
+            stroke={colormap.players[3]}
             d={top_edge}
+          />
+          <path
+            fill="none"
+            strokeWidth={STROKE_WIDTH}
+            strokeLinecap={"butt"}
+            strokeLinejoin={"miter"}
+            stroke={colormap.players[1]}
+            d={right_edge}
+          />
+          <path
+            fill="none"
+            strokeWidth={STROKE_WIDTH}
+            strokeLinecap={"butt"}
+            strokeLinejoin={"miter"}
+            stroke={colormap.players[3]}
+            d={bottom_edge}
           />
         </svg>
         {hexagons.map(({ x, y, ...props }) => (
-          <Hexagon orientation={orientation} key={`${x},${y}`} {...props}>
+          <Hexagon key={`${x},${y}`} {...props}>
             {x}, {y}
           </Hexagon>
         ))}

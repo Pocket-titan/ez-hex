@@ -54,7 +54,8 @@ const Hexagon = ({
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          backgroundColor: "#f06",
+          backgroundColor: "rgba(0, 50, 70, 0.6)",
+          // opacity: 0.6,
           clipPath: clip_path,
         }}
       >
