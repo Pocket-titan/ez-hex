@@ -1,6 +1,5 @@
 import React from "react";
 import Grid from "./Grid";
-import Measure from "react-measure";
 
 const App = () => {
   return (
@@ -9,13 +8,14 @@ const App = () => {
         height: "100vh",
         width: "100vw",
         background: "hsl(45, 74%, 82%)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}
     >
-      <Measure bounds>
-        {({ measureRef, contentRect }) => (
-          <Grid ref={measureRef} contentRect={contentRect} />
-        )}
-      </Measure>
+      <div style={{ width: "50%" }}>
+        <Grid />
+      </div>
     </div>
   );
 };

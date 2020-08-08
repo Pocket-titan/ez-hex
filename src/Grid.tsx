@@ -1,236 +1,231 @@
 import React, { Ref } from "react";
-import Hexagon, { Orientation } from "./Hexagon";
-import { ContentRect } from "react-measure";
-import colormaps from "./colormaps";
+import Measure from "react-measure";
+import Hexagon from "./Hexagon";
 
-const isOdd = (x: number) => x % 2 === 0;
+const to_path = (points: number[][]) =>
+  points.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
 
-// const colormaps = {
-//   vintage: [
-//     "hsl(45, 74%, 82%)",
-//     "hsl(22, 100%, 59%)",
-//     "hsl(156, 43%, 67%)",
-//     "hsl(62, 73%, 45%)",
-//     "hsl(335, 100%, 50%)",
-//   ],
-//   pastel: [
-//     "hsl(68, 75%, 51%)",
-//     "hsl(188, 69%, 72%)",
-//     "hsl(46, 100%, 67%)",
-//     "hsl(355, 67%, 68%)",
-//   ],
-//   vibrant: [
-//     "hsl(0, 0%, 91%)",
-//     "hsl(173, 91%, 37%)",
-//     "hsl(335, 86%, 51%)",
-//     "hsl(21, 90%, 58%)",
-//     "hsl(40, 97%, 54%)",
-//     "hsl(62, 61%, 49%)",
-//   ],
-//   wallpaper: [
-//     "hsl(20, 89%, 89%)",
-//     "hsl(177, 24%, 56%)",
-//     "hsl(4, 84%, 75%)",
-//     "hsl(354, 41%, 54%)",
-//     "hsl(247, 19%, 28%)",
-//   ],
-//   viridis: [
-//     "hsl(53, 95%, 78%)",
-//     "hsl(85, 51%, 63%)",
-//     "hsl(152, 51%, 40%)",
-//     "hsl(261, 24%, 26%)",
-//     "hsl(293, 54%, 15%)",
-//   ],
-//   reds: [
-//     "hsl(0, 0%, 100%)",
-//     "hsl(341, 82%, 49%)",
-//     "hsl(335, 65%, 41%)",
-//     "hsl(20, 89%, 58%)",
-//     "hsl(48, 98%, 52%)",
-//   ],
-//   material: [
-//     "hsl(240, 100%, 75%)",
-//     "hsl(0, 100%, 64%)",
-//     "hsl(168, 33%, 44%)",
-//     "hsl(54, 99%, 46%)",
-//   ],
-//   classic: [
-//     "hsl(0, 0%, 80%)",
-//     // "hsl(216, 100%, 67%)",
-//     "hsl(0, 57%, 53%)",
-//     "hsl(240, 57%, 53%)",
-//   ],
-// };
-
-let colormap = colormaps.vintage;
+const deg_to_rad = (degrees: number) => (degrees * Math.PI) / 180;
 
 const Grid = React.forwardRef(
   (
     {
-      size = 5,
-      contentRect,
-      orientation = "POINTY_TOP",
+      width = -1,
+      height = -1,
+      grid_size = 5, // hexagons
     }: {
-      size?: number;
-      contentRect: ContentRect;
-      orientation?: Orientation;
+      width?: number;
+      height?: number;
+      grid_size?: number;
     },
     ref: Ref<HTMLUListElement>
   ) => {
-    const { width = -1, height = -1 } = contentRect?.bounds || {};
-
-    let { num_columns, num_rows, column_span, row_span, calculate_position } =
-      orientation === "POINTY_TOP"
-        ? {
-            num_columns: 2 * size + (size - 1),
-            num_rows: 3 * size + 1,
-            column_span: 2,
-            row_span: 4,
-            calculate_position: (x: number, y: number) => ({
-              row_start: 1 + y * 3,
-              column_start: 1 + x * 2 + y,
-            }),
-          }
-        : {
-            num_columns: 3 * size + 1,
-            num_rows: 2 * size + 1,
-            column_span: 4,
-            row_span: 2,
-            calculate_position: (x: number, y: number) => ({
-              row_start: 1 + 2 * y + (isOdd(x) ? 1 : 0),
-              column_start: 1 + 3 * x,
-            }),
-          };
-
     const GAP = 0;
-    // const PADDING = 2 * GAP;
+    const PADDING = 20;
+    const STROKE_WIDTH = 10;
+    // const BORDER_GAP = GAP;
     const BORDER_GAP = 0;
-    const PADDING = 2 * 40;
+
+    const {
+      num_columns,
+      num_rows,
+      column_span,
+      row_span,
+      calculate_position,
+    } = {
+      num_columns: 2 * grid_size + (grid_size - 1),
+      num_rows: 3 * grid_size + 1,
+      column_span: 2,
+      row_span: 4,
+      calculate_position: (x: number, y: number) => ({
+        row_start: 1 + y * 3,
+        column_start: 1 + x * 2 + y,
+      }),
+    };
+
+    const hexagons = [...Array(grid_size).keys()]
+      .map((x) => [...Array(grid_size).keys()].map((y) => [x, y]))
+      .flat()
+      .map(([x, y]) => {
+        let { row_start, column_start } = calculate_position(x, y);
+
+        return {
+          x,
+          y,
+          row_start,
+          column_start,
+          row_span,
+          column_span,
+        };
+      });
 
     let cell_width = (width - 2 * PADDING) / num_columns;
     let cell_height = (height - 2 * PADDING) / num_rows;
 
-    const hexes = [...Array(size).keys()]
-      .map((x) => [...Array(size).keys()].map((y) => [x, y]))
-      .flat();
+    let offset = BORDER_GAP / Math.sqrt(2);
 
-    const hexagons = hexes.map(([x, y]) => {
-      let { row_start, column_start } = calculate_position(x, y);
+    const adjust = (
+      points: number[][],
+      { column_start, row_start }: { column_start: number; row_start: number }
+    ) =>
+      points
+        .map(([x, y]) => [
+          x + (column_start - 1) * cell_width,
+          y + (row_start - 1) * cell_height,
+        ])
+        .map(([x, y]) => [x - offset, y - offset])
+        .map(([x, y]) => [x, y + cell_height])
+        .map(([x, y]) => [x + PADDING, y + PADDING]);
 
-      return {
-        x,
-        y,
-        row_start,
-        column_start,
-        row_span,
-        column_span,
-      };
-    });
+    let long_side = (Math.sin(deg_to_rad(60)) * STROKE_WIDTH) / 2;
+    let short_side = (Math.cos(deg_to_rad(60)) * STROKE_WIDTH) / 2;
 
-    let left_edges = hexagons.filter(({ x, y }) => x === 0);
-    let top_edges = hexagons.filter(({ x, y }) => y === 0);
-    let right_edges = hexagons.filter(({ x, y }) => x === size - 1);
-    let bottom_edges = hexagons.filter(({ x, y }) => y === size - 1);
+    const edges = {
+      left: to_path(
+        hexagons
+          .filter(({ x, y }) => x === 0)
+          .flatMap(({ column_start, row_start }, index, arr) => {
+            let first = index === 0;
+            let last = index === arr.length - 1;
 
-    const STROKE_WIDTH = 20;
+            let points = first
+              ? [
+                  [0.5 * cell_width, -0.5 * cell_height],
+                  [0, 0],
+                  [0, 2 * cell_height],
+                  [cell_width, 3 * cell_height],
+                ].map(([x, y], i) =>
+                  i === 0 || i === 1
+                    ? [x - long_side, y - short_side]
+                    : [x - long_side, y + short_side]
+                )
+              : last
+              ? [
+                  [0, 0],
+                  [0, 2 * cell_height],
+                  [0.5 * cell_width, 2.5 * cell_height],
+                ].map(([x, y], i, arr) =>
+                  i === arr.length - 1
+                    ? [x - long_side, y + short_side]
+                    : [x - long_side, y + short_side]
+                )
+              : [
+                  [0, 0],
+                  [0, 2 * cell_height],
+                  [cell_width, 3 * cell_height],
+                ].map(([x, y]) => [x - long_side, y + short_side]);
 
-    let left_edge = left_edges
-      .map(({ row_start, column_start }) => {
-        let offset = BORDER_GAP / Math.sqrt(2);
+            return adjust(points, { column_start, row_start });
+          })
+      ),
+      top: to_path(
+        hexagons
+          .filter(({ x, y }) => y === 0)
+          .flatMap(({ column_start, row_start }, index, arr) => {
+            let first = index === 0;
+            let last = index === arr.length - 1;
 
-        let points = [
-          [0, 0],
-          [0, 2 * cell_height],
-          [cell_width, 3 * cell_height],
-        ]
-          .map(([x, y]) => [
-            x - STROKE_WIDTH / 2 / Math.sqrt(2) - 3,
-            y + STROKE_WIDTH / 2 / Math.sqrt(2) - 2,
-          ])
-          .map(([x, y]) => [x - offset, y - offset])
-          .map(([x, y]) => [x, y + cell_height])
-          .map(([x, y]) => [
-            x + (column_start - 1) * cell_width,
-            y + (row_start - 1) * cell_height,
-          ])
-          .map(([x, y]) => [x + PADDING, y + PADDING]);
+            let points = first
+              ? [
+                  [0.5 * cell_width, -0.5 * cell_height],
+                  [cell_width, -cell_height],
+                  [2 * cell_width, 0],
+                ].map(([x, y], i) =>
+                  i === 0
+                    ? [x - long_side, y - short_side]
+                    : [x, y - STROKE_WIDTH / 2]
+                )
+              : last
+              ? [
+                  [0, 0],
+                  [cell_width, -cell_height],
+                  [1.5 * cell_width, -0.5 * cell_height],
+                ].map(([x, y], i, arr) =>
+                  i === arr.length - 1
+                    ? [x + long_side, y - short_side]
+                    : [x, y - STROKE_WIDTH / 2]
+                )
+              : [
+                  [0, 0],
+                  [cell_width, -cell_height],
+                  [2 * cell_width, 0],
+                ].map(([x, y]) => [x, y - STROKE_WIDTH / 2]);
 
-        return points;
-      })
-      .flat(1)
-      .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
-      .join(" ");
+            return adjust(points, { column_start, row_start });
+          })
+      ),
+      right: to_path(
+        hexagons
+          .filter(({ x, y }) => x === grid_size - 1)
+          .flatMap(({ column_start, row_start }, index, arr) => {
+            let first = index === 0;
+            let last = index === arr.length - 1;
 
-    let top_edge = top_edges
-      .map(({ row_start, column_start }, index) => {
-        let offset = BORDER_GAP / Math.sqrt(2);
+            let points = first
+              ? [
+                  [1.5 * cell_width, -0.5 * cell_height],
+                  [2 * cell_width, 0],
+                  [2 * cell_width, 2 * cell_height],
+                ].map(([x, y], i) =>
+                  i === 0 || i === 1
+                    ? [x + long_side, y - short_side]
+                    : [x + long_side, y - short_side]
+                )
+              : last
+              ? [
+                  [2 * cell_width, 0],
+                  [2 * cell_width, 2 * cell_height],
+                  [1.5 * cell_width, 2.5 * cell_height],
+                ].map(([x, y], i, arr) =>
+                  i === arr.length - 1 || i === arr.length - 2
+                    ? [x + long_side, y + short_side]
+                    : [x + long_side, y - short_side]
+                )
+              : [
+                  [2 * cell_width, 0],
+                  [2 * cell_width, 2 * cell_height],
+                ].map(([x, y]) => [x + long_side, y - short_side]);
 
-        let points = [
-          [0, 0],
-          [cell_width, -cell_height],
-          [2 * cell_width, 0],
-        ]
-          .map(([x, y]) => [x, y - STROKE_WIDTH / Math.sqrt(2) + 3])
-          .map(([x, y]) => [x - offset, y - offset])
-          .map(([x, y]) => [x, y + cell_height])
-          .map(([x, y]) => [
-            x + (column_start - 1) * cell_width,
-            y + (row_start - 1) * cell_height,
-          ])
-          .map(([x, y]) => [x + PADDING, y + PADDING]);
+            return adjust(points, { column_start, row_start });
+          })
+      ),
+      bottom: to_path(
+        hexagons
+          .filter(({ x, y }) => y === grid_size - 1)
+          .flatMap(({ column_start, row_start }, index, arr) => {
+            let first = index === 0;
+            let last = index === arr.length - 1;
 
-        return points;
-      })
-      .flat(1)
-      .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
-      .join(" ");
+            let points = first
+              ? [
+                  [0.5 * cell_width, 2.5 * cell_height],
+                  [cell_width, 3 * cell_height],
+                  [2 * cell_width, 2 * cell_height],
+                ].map(([x, y], i) =>
+                  i === 0
+                    ? [x - long_side, y + short_side]
+                    : [x, y + STROKE_WIDTH / 2]
+                )
+              : last
+              ? [
+                  [0, 2 * cell_height],
+                  [cell_width, 3 * cell_height],
+                  [1.5 * cell_width, 2.5 * cell_height],
+                ].map(([x, y], i, arr) =>
+                  i === arr.length - 1
+                    ? [x + long_side, y + short_side]
+                    : [x, y + STROKE_WIDTH / 2]
+                )
+              : [
+                  [0, 2 * cell_height],
+                  [cell_width, 3 * cell_height],
+                  [2 * cell_width, 2 * cell_height],
+                ].map(([x, y]) => [x, y + STROKE_WIDTH / 2]);
 
-    let right_edge = right_edges
-      .map(({ row_start, column_start }) => {
-        let offset = BORDER_GAP / Math.sqrt(2);
-
-        let points = [
-          [2 * cell_width, 0],
-          [2 * cell_width, 2 * cell_height],
-        ]
-          .map(([x, y]) => [x + STROKE_WIDTH / 2 - 1, y - 5])
-          .map(([x, y]) => [x + offset, y + offset])
-          .map(([x, y]) => [x, y + cell_height])
-          .map(([x, y]) => [
-            x + (column_start - 1) * cell_width,
-            y + (row_start - 1) * cell_height,
-          ])
-          .map(([x, y]) => [x + PADDING, y + PADDING]);
-
-        return points;
-      })
-      .flat(1)
-      .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
-      .join(" ");
-
-    let bottom_edge = bottom_edges
-      .map(({ row_start, column_start }) => {
-        let offset = BORDER_GAP / Math.sqrt(2);
-
-        let points = [
-          [0, 3 * cell_height],
-          [cell_width, 4 * cell_height],
-          [2 * cell_width, 3 * cell_height],
-        ]
-          .map(([x, y]) => [x, y - 2 * STROKE_WIDTH - 2])
-          .map(([x, y]) => [x - offset, y - offset])
-          .map(([x, y]) => [x, y + cell_height])
-          .map(([x, y]) => [
-            x + (column_start - 1) * cell_width,
-            y + (row_start - 1) * cell_height,
-          ])
-          .map(([x, y]) => [x + PADDING, y + PADDING]);
-
-        return points;
-      })
-      .flat(1)
-      .map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`))
-      .join(" ");
+            return adjust(points, { column_start, row_start });
+          })
+      ),
+    };
 
     return (
       <ul
@@ -238,13 +233,14 @@ const Grid = React.forwardRef(
         style={{
           position: "relative",
           display: "grid",
-          width: "50%",
+          width: "100%",
           listStyleType: "none",
           margin: 0,
           padding: PADDING,
           gridGap: GAP,
           gridTemplateColumns: `repeat(${num_columns}, 1fr)`,
           gridTemplateRows: `repeat(${num_rows}, 1fr)`,
+          lineHeight: 0,
         }}
       >
         <svg
@@ -259,38 +255,21 @@ const Grid = React.forwardRef(
             zIndex: 1,
           }}
         >
-          <path
-            fill="none"
-            strokeWidth={STROKE_WIDTH}
-            strokeLinecap={"butt"}
-            strokeLinejoin={"miter"}
-            stroke={colormap.players[1]}
-            d={left_edge}
-          />
-          <path
-            fill="none"
-            strokeWidth={STROKE_WIDTH}
-            strokeLinecap={"butt"}
-            strokeLinejoin={"miter"}
-            stroke={colormap.players[3]}
-            d={top_edge}
-          />
-          <path
-            fill="none"
-            strokeWidth={STROKE_WIDTH}
-            strokeLinecap={"butt"}
-            strokeLinejoin={"miter"}
-            stroke={colormap.players[1]}
-            d={right_edge}
-          />
-          <path
-            fill="none"
-            strokeWidth={STROKE_WIDTH}
-            strokeLinecap={"butt"}
-            strokeLinejoin={"miter"}
-            stroke={colormap.players[3]}
-            d={bottom_edge}
-          />
+          {Object.entries(edges).map(([side, d]) => (
+            <path
+              key={side}
+              fill="none"
+              strokeWidth={STROKE_WIDTH}
+              strokeLinecap={"butt"}
+              strokeLinejoin={"miter"}
+              stroke={
+                side === "left" || side === "right"
+                  ? "rgba(0,0,200,0.6)"
+                  : "rgba(0,200,0,0.6)"
+              }
+              d={d}
+            />
+          ))}
         </svg>
         {hexagons.map(({ x, y, ...props }) => (
           <Hexagon key={`${x},${y}`} {...props}>
@@ -302,4 +281,15 @@ const Grid = React.forwardRef(
   }
 );
 
-export default Grid;
+export default (props: any) => (
+  <Measure bounds>
+    {({ measureRef, contentRect }) => (
+      <Grid
+        ref={measureRef}
+        {...props}
+        width={contentRect?.bounds?.width || -1}
+        height={contentRect?.bounds?.height || -1}
+      />
+    )}
+  </Measure>
+);
