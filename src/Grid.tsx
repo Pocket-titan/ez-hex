@@ -1,18 +1,23 @@
-import React, { Ref } from "react";
+import React, { Ref, useContext } from "react";
 import Measure from "react-measure";
 import Hexagon from "./Hexagon";
+import ThemeContext from "./ThemeContext";
 
 const to_path = (points: number[][]) =>
   points.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
 
 const deg_to_rad = (degrees: number) => (degrees * Math.PI) / 180;
 
+const long_side = (length: number) => Math.sin(deg_to_rad(60)) * length;
+
+const short_side = (length: number) => Math.cos(deg_to_rad(60)) * length;
+
 const Grid = React.forwardRef(
   (
     {
       width = -1,
       height = -1,
-      grid_size = 5, // hexagons
+      grid_size = 7, // hexagons
     }: {
       width?: number;
       height?: number;
@@ -20,7 +25,9 @@ const Grid = React.forwardRef(
     },
     ref: Ref<HTMLUListElement>
   ) => {
-    const GAP = 0;
+    const { theme } = useContext(ThemeContext);
+
+    const GAP = 4;
     const PADDING = 20;
     const STROKE_WIDTH = 10;
     // const BORDER_GAP = GAP;
@@ -56,6 +63,7 @@ const Grid = React.forwardRef(
           column_start,
           row_span,
           column_span,
+          grid_gap: GAP,
         };
       });
 
@@ -77,9 +85,6 @@ const Grid = React.forwardRef(
         .map(([x, y]) => [x, y + cell_height])
         .map(([x, y]) => [x + PADDING, y + PADDING]);
 
-    let long_side = (Math.sin(deg_to_rad(60)) * STROKE_WIDTH) / 2;
-    let short_side = (Math.cos(deg_to_rad(60)) * STROKE_WIDTH) / 2;
-
     const edges = {
       left: to_path(
         hexagons
@@ -96,8 +101,14 @@ const Grid = React.forwardRef(
                   [cell_width, 3 * cell_height],
                 ].map(([x, y], i) =>
                   i === 0 || i === 1
-                    ? [x - long_side, y - short_side]
-                    : [x - long_side, y + short_side]
+                    ? [
+                        x - long_side(STROKE_WIDTH / 2),
+                        y - short_side(STROKE_WIDTH / 2),
+                      ]
+                    : [
+                        x - long_side(STROKE_WIDTH / 2),
+                        y + short_side(STROKE_WIDTH / 2),
+                      ]
                 )
               : last
               ? [
@@ -106,14 +117,23 @@ const Grid = React.forwardRef(
                   [0.5 * cell_width, 2.5 * cell_height],
                 ].map(([x, y], i, arr) =>
                   i === arr.length - 1
-                    ? [x - long_side, y + short_side]
-                    : [x - long_side, y + short_side]
+                    ? [
+                        x - long_side(STROKE_WIDTH / 2),
+                        y + short_side(STROKE_WIDTH / 2),
+                      ]
+                    : [
+                        x - long_side(STROKE_WIDTH / 2),
+                        y + short_side(STROKE_WIDTH / 2),
+                      ]
                 )
               : [
                   [0, 0],
                   [0, 2 * cell_height],
                   [cell_width, 3 * cell_height],
-                ].map(([x, y]) => [x - long_side, y + short_side]);
+                ].map(([x, y]) => [
+                  x - long_side(STROKE_WIDTH / 2),
+                  y + short_side(STROKE_WIDTH / 2),
+                ]);
 
             return adjust(points, { column_start, row_start });
           })
@@ -132,7 +152,10 @@ const Grid = React.forwardRef(
                   [2 * cell_width, 0],
                 ].map(([x, y], i) =>
                   i === 0
-                    ? [x - long_side, y - short_side]
+                    ? [
+                        x - long_side(STROKE_WIDTH / 2),
+                        y - short_side(STROKE_WIDTH / 2),
+                      ]
                     : [x, y - STROKE_WIDTH / 2]
                 )
               : last
@@ -142,14 +165,21 @@ const Grid = React.forwardRef(
                   [1.5 * cell_width, -0.5 * cell_height],
                 ].map(([x, y], i, arr) =>
                   i === arr.length - 1
-                    ? [x + long_side, y - short_side]
+                    ? [
+                        x + long_side(STROKE_WIDTH / 2),
+                        y - short_side(STROKE_WIDTH / 2),
+                      ]
                     : [x, y - STROKE_WIDTH / 2]
                 )
               : [
                   [0, 0],
                   [cell_width, -cell_height],
                   [2 * cell_width, 0],
-                ].map(([x, y]) => [x, y - STROKE_WIDTH / 2]);
+                ]
+                  .map(([x, y]) => [x, y - STROKE_WIDTH / 2])
+                  .map(([x, y], i, arr) =>
+                    i === 0 ? [x, y] : i === arr.length - 1 ? [x, y] : [x, y]
+                  );
 
             return adjust(points, { column_start, row_start });
           })
@@ -168,8 +198,14 @@ const Grid = React.forwardRef(
                   [2 * cell_width, 2 * cell_height],
                 ].map(([x, y], i) =>
                   i === 0 || i === 1
-                    ? [x + long_side, y - short_side]
-                    : [x + long_side, y - short_side]
+                    ? [
+                        x + long_side(STROKE_WIDTH / 2),
+                        y - short_side(STROKE_WIDTH / 2),
+                      ]
+                    : [
+                        x + long_side(STROKE_WIDTH / 2),
+                        y - short_side(STROKE_WIDTH / 2),
+                      ]
                 )
               : last
               ? [
@@ -178,13 +214,22 @@ const Grid = React.forwardRef(
                   [1.5 * cell_width, 2.5 * cell_height],
                 ].map(([x, y], i, arr) =>
                   i === arr.length - 1 || i === arr.length - 2
-                    ? [x + long_side, y + short_side]
-                    : [x + long_side, y - short_side]
+                    ? [
+                        x + long_side(STROKE_WIDTH / 2),
+                        y + short_side(STROKE_WIDTH / 2),
+                      ]
+                    : [
+                        x + long_side(STROKE_WIDTH / 2),
+                        y - short_side(STROKE_WIDTH / 2),
+                      ]
                 )
               : [
                   [2 * cell_width, 0],
                   [2 * cell_width, 2 * cell_height],
-                ].map(([x, y]) => [x + long_side, y - short_side]);
+                ].map(([x, y]) => [
+                  x + long_side(STROKE_WIDTH / 2),
+                  y - short_side(STROKE_WIDTH / 2),
+                ]);
 
             return adjust(points, { column_start, row_start });
           })
@@ -203,7 +248,10 @@ const Grid = React.forwardRef(
                   [2 * cell_width, 2 * cell_height],
                 ].map(([x, y], i) =>
                   i === 0
-                    ? [x - long_side, y + short_side]
+                    ? [
+                        x - long_side(STROKE_WIDTH / 2),
+                        y + short_side(STROKE_WIDTH / 2),
+                      ]
                     : [x, y + STROKE_WIDTH / 2]
                 )
               : last
@@ -213,7 +261,10 @@ const Grid = React.forwardRef(
                   [1.5 * cell_width, 2.5 * cell_height],
                 ].map(([x, y], i, arr) =>
                   i === arr.length - 1
-                    ? [x + long_side, y + short_side]
+                    ? [
+                        x + long_side(STROKE_WIDTH / 2),
+                        y + short_side(STROKE_WIDTH / 2),
+                      ]
                     : [x, y + STROKE_WIDTH / 2]
                 )
               : [
@@ -252,7 +303,8 @@ const Grid = React.forwardRef(
             left: 0,
             top: 0,
             background: "transparent",
-            zIndex: 1,
+            zIndex: 5,
+            pointerEvents: "none",
           }}
         >
           {Object.entries(edges).map(([side, d]) => (
@@ -264,18 +316,27 @@ const Grid = React.forwardRef(
               strokeLinejoin={"miter"}
               stroke={
                 side === "left" || side === "right"
-                  ? "rgba(0,0,200,0.6)"
-                  : "rgba(0,200,0,0.6)"
+                  ? theme.players[1]
+                  : theme.players[3]
               }
               d={d}
             />
           ))}
         </svg>
-        {hexagons.map(({ x, y, ...props }) => (
-          <Hexagon key={`${x},${y}`} {...props}>
-            {x}, {y}
-          </Hexagon>
-        ))}
+        {hexagons.map(
+          ({ x, y, column_start, row_start, column_span, row_span }) => (
+            <Hexagon
+              key={`${x},${y}`}
+              grid_gap={GAP}
+              style={{
+                gridColumn: `${column_start} / span ${column_span}`,
+                gridRow: `${row_start} / span ${row_span}`,
+              }}
+            >
+              {x}, {y}
+            </Hexagon>
+          )
+        )}
       </ul>
     );
   }

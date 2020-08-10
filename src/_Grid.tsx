@@ -2,7 +2,7 @@
 import React, { Ref } from "react";
 import Hexagon from "./Hexagon";
 import { ContentRect } from "react-measure";
-import colormaps from "./colormaps";
+import colormaps from "./themes";
 
 const isOdd = (x: number) => x % 2 === 0;
 
