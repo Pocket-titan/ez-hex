@@ -1,7 +1,8 @@
 import React, { Ref, useContext } from "react";
 import Measure from "react-measure";
 import Hexagon from "./Hexagon";
-import ThemeContext from "./ThemeContext";
+import ThemeContext from "../ThemeContext";
+import { Role, Board } from "../hex";
 
 const to_path = (points: number[][]) =>
   points.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
@@ -15,17 +16,23 @@ const short_side = (length: number) => Math.cos(deg_to_rad(60)) * length;
 const Grid = React.forwardRef(
   (
     {
+      board,
+      role,
+      is_my_turn,
       width = -1,
       height = -1,
-      grid_size = 7, // hexagons
     }: {
+      board: Board;
+      role: Role;
+      is_my_turn: boolean;
       width?: number;
       height?: number;
-      grid_size?: number;
     },
     ref: Ref<HTMLUListElement>
   ) => {
     const { theme } = useContext(ThemeContext);
+
+    let grid_size = board.length;
 
     const GAP = 4;
     const PADDING = 20;
@@ -50,10 +57,10 @@ const Grid = React.forwardRef(
       }),
     };
 
-    const hexagons = [...Array(grid_size).keys()]
-      .map((x) => [...Array(grid_size).keys()].map((y) => [x, y]))
+    const hexagons = board
+      .map((row, x) => row.map((hex, y) => ({ ...hex, coords: [x, y] })))
       .flat()
-      .map(([x, y]) => {
+      .map(({ coords: [x, y], ...hex }) => {
         let { row_start, column_start } = calculate_position(x, y);
 
         return {
@@ -64,6 +71,7 @@ const Grid = React.forwardRef(
           row_span,
           column_span,
           grid_gap: GAP,
+          ...hex,
         };
       });
 
@@ -316,22 +324,33 @@ const Grid = React.forwardRef(
               strokeLinejoin={"miter"}
               stroke={
                 side === "left" || side === "right"
-                  ? theme.players[1]
-                  : theme.players[3]
+                  ? theme.player_one
+                  : theme.player_two
               }
               d={d}
             />
           ))}
         </svg>
         {hexagons.map(
-          ({ x, y, column_start, row_start, column_span, row_span }) => (
+          ({
+            x,
+            y,
+            column_start,
+            row_start,
+            column_span,
+            row_span,
+            occupied_by,
+          }) => (
             <Hexagon
               key={`${x},${y}`}
+              occupied_by={occupied_by}
               grid_gap={GAP}
               style={{
                 gridColumn: `${column_start} / span ${column_span}`,
                 gridRow: `${row_start} / span ${row_span}`,
               }}
+              is_my_turn={is_my_turn}
+              role={role}
             >
               {x}, {y}
             </Hexagon>
