@@ -1,10 +1,11 @@
 import React from "react";
 import { useRouteMatch } from "react-router-dom";
-import styled, { css } from "styled-components/macro";
+import styled from "styled-components/macro";
 import Color from "color";
+import { useSpring } from "react-spring";
 import { stringify_points } from "../utils";
 import { useGame, useTheme } from "../game";
-import { Hex } from "../../../server/types";
+import { Hex } from "types";
 
 const Polygon = styled.polygon<{ color: string; hover_color: string }>`
   transition: 250ms;
@@ -61,6 +62,7 @@ const Hexagon = ({
         points={stringify_points(points)}
         style={{
           ...style,
+          stroke: theme.border,
           cursor:
             role === "spectator"
               ? "not-allowed"

@@ -1,15 +1,18 @@
 import React from "react";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
 import Game from "./routes/Game";
+import { useTheme } from "./game";
 
 const App = () => {
+  const { theme } = useTheme();
+
   return (
     <Router>
       <div
         style={{
           height: "100vh",
           width: "100vw",
-          background: "hsl(0, 0%, 70%)",
+          background: theme.background,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",

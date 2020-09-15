@@ -1,6 +1,6 @@
 import socketio from "socket.io";
 import _ from "lodash";
-import { Game, Id, BoardSize, Board, Player, Role, Hex } from "./types";
+import { Game, Id, BoardSize, Board, Player, Role, Hex } from "types";
 
 const PORT = process.env.PORT || 3001;
 const io = socketio(PORT);
@@ -26,6 +26,7 @@ let create_board = (board_size: BoardSize = DEFAULT_BOARD_SIZE): Board =>
 let create_game = (board_size: BoardSize = DEFAULT_BOARD_SIZE): Game => ({
   board: create_board(board_size),
   turn: (["player_one", "player_two"] as Player[])[_.random(0, 1)],
+  winner: null,
   users: [],
 });
 

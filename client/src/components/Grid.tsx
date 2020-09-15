@@ -1,27 +1,11 @@
-import React from "react";
+import React, { useEffect, useLayoutEffect, useState, useRef } from "react";
 import _ from "lodash";
 import Hexagon from "./Hexagon";
-import { stringify_points } from "../utils";
-import { Board, Player, Hex } from "../../../server/types";
+import { stringify_points, midpoint, first, last } from "../utils";
 import { useGame, useTheme } from "../game";
 
-let midpoint = (
-  [x1, y1]: [number, number],
-  [x2, y2]: [number, number]
-): [number, number] => {
-  return [(x1 + x2) / 2, (y1 + y2) / 2];
-};
-
-let last = <T extends unknown>(array: T[]): T => {
-  return array[array.length - 1];
-};
-
-let first = <T extends unknown>(array: T[]): T => {
-  return array[0];
-};
-
 type Tile = {
-  hex: Hex;
+  hex: import("types").Hex;
   grid_coords: {
     x: number;
     y: number;
@@ -35,22 +19,48 @@ type Tile = {
 
 const Grid = ({
   radius = 60,
-  strokeWidth = 4,
+  strokeWidth = 5,
   edgeWidth = 20,
 }: {
   radius?: number;
   strokeWidth?: number;
   edgeWidth?: number;
 }) => {
+  const ref = useRef<SVGSVGElement>();
   const board = useGame((state) => state.game.board);
   const theme = useTheme((state) => state.theme);
-  const [width, height] = [Math.sqrt(3) * radius, 2 * radius];
+  const [{ width, height, x, y }, setDimensions] = useState({
+    width: 0,
+    height: 0,
+    x: 0,
+    y: 0,
+  });
+
+  useEffect(() => {
+    if (!ref.current || board.length === 0) {
+      return;
+    }
+
+    let { width, height, x, y } = ref.current.getBBox({
+      stroke: true, // doesn't work :(
+      fill: true,
+    });
+
+    setDimensions({
+      width: width + 1 * edgeWidth,
+      height: height + 1.4 * edgeWidth,
+      x: x - edgeWidth,
+      y: y - edgeWidth,
+    });
+  }, [ref.current, board]);
+
+  const [hex_width, hex_height] = [Math.sqrt(3) * radius, 2 * radius];
 
   const tiles: Tile[] = board.flat().map(({ x, y, ...rest }) => {
     // Position the tiles within the grid
     let screen_coords = {
-      x: x * width + (y * width) / 2,
-      y: y * height - (y * height) / 4,
+      x: x * hex_width + (y * hex_width) / 2,
+      y: y * hex_height - (y * hex_height) / 4,
     };
 
     return {
@@ -66,12 +76,12 @@ const Grid = ({
       screen_coords,
       // Points of the corners of a hexagon
       points: [
-        [width / 2, 0],
-        [width, height / 4],
-        [width, (3 * height) / 4],
-        [width / 2, height],
-        [0, (3 * height) / 4],
-        [0, height / 4],
+        [hex_width / 2, 0],
+        [hex_width, hex_height / 4],
+        [hex_width, (3 * hex_height) / 4],
+        [hex_width / 2, hex_height],
+        [0, (3 * hex_height) / 4],
+        [0, hex_height / 4],
       ]
         // Offset corner points by position within grid
         .map(([point_x, point_y]) => [
@@ -156,67 +166,77 @@ const Grid = ({
   );
 
   return (
-    <svg
+    <div
       style={{
-        width: "100%",
-        height: "100%",
+        flex: 1,
+        height: "85%",
+        width: "85%",
       }}
     >
-      {tiles.map(({ grid_coords: { x, y }, hex, points }) => (
-        <Hexagon
-          key={`${x},${y}`}
-          points={points}
-          hex={hex}
-          style={{
-            stroke: "black",
-            strokeWidth,
-          }}
-        />
-      ))}
-      {Object.entries(sides).map(([side, points]) => {
-        if (points.length === 0) {
-          return null;
-        }
-
-        let pts: [number, number][] = points;
-
-        if (side === "left") {
-          let last_point = midpoint(last(sides.left), first(sides.bottom));
-          pts = [...points, last_point];
-        }
-
-        if (side === "bottom") {
-          let first_point = midpoint(last(sides.left), first(sides.bottom));
-          // let last_point = midpoint(last(sides.bottom), last(sides.right));
-          pts = [first_point, ...points];
-        }
-
-        if (side === "right") {
-          let first_point = midpoint(last(sides.top), first(sides.right));
-          pts = [first_point, ...points];
-        }
-
-        if (side === "top") {
-          let last_point = midpoint(last(sides.top), first(sides.right));
-          pts = [...points, last_point];
-        }
-
-        return (
-          <polyline
-            key={`side_${side}`}
-            fill="none"
-            stroke={
-              side === "left" || side === "right"
-                ? theme.player_one
-                : theme.player_two
-            }
-            strokeWidth={edgeWidth}
-            strokeLinecap="butt"
-            points={stringify_points(pts)}
+      <svg
+        ref={(_ref: SVGSVGElement) => (ref.current = _ref)}
+        preserveAspectRatio="xMidYMid meet"
+        viewBox={`${0} ${0} ${width} ${height}`}
+        style={{
+          width: "100%",
+          height: "100%",
+        }}
+      >
+        {tiles.map(({ grid_coords: { x, y }, hex, points }) => (
+          <Hexagon
+            key={`${x},${y}`}
+            points={points}
+            hex={hex}
+            style={{
+              strokeWidth,
+            }}
           />
-        );
-      })}
-    </svg>
+        ))}
+        {Object.entries(sides).map(([side, points]) => {
+          if (points.length === 0) {
+            return null;
+          }
+
+          let pts: [number, number][] = points;
+
+          if (side === "left") {
+            let last_point = midpoint(last(sides.left), first(sides.bottom));
+            pts = [...points, last_point];
+          }
+
+          if (side === "bottom") {
+            let first_point = midpoint(last(sides.left), first(sides.bottom));
+            // let last_point = midpoint(last(sides.bottom), last(sides.right));
+            pts = [first_point, ...points];
+          }
+
+          if (side === "right") {
+            let first_point = midpoint(last(sides.top), first(sides.right));
+            pts = [first_point, ...points];
+          }
+
+          if (side === "top") {
+            let last_point = midpoint(last(sides.top), first(sides.right));
+            pts = [...points, last_point];
+          }
+
+          return (
+            <polyline
+              key={`side_${side}`}
+              fill="none"
+              stroke={
+                side === "left" || side === "right"
+                  ? theme.player_one
+                  : theme.player_two
+              }
+              strokeWidth={edgeWidth}
+              strokeLinecap="butt"
+              points={stringify_points(pts)}
+            />
+          );
+        })}
+      </svg>
+    </div>
   );
 };
 

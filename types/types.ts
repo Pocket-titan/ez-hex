@@ -17,6 +17,10 @@ export type Board = Hex[][];
 export type Game = {
   board: Board;
   turn: Player;
+  winner: null | {
+    player: Player;
+    path: Hex[];
+  };
   users: {
     id: Id;
     role: Role;
